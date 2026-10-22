@@ -1,46 +1,375 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tubelight – search and watch</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insert Video Simulator</title>
+    <style>
+        :root {
+            --google-blue: #1a73e8;
+            --google-gray: #f1f3f4;
+            --text-dark: #3c4043;
+            --border-color: #dadce0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: var(--text-dark);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        /* Container imitating Google Slides workspace context */
+        .workspace {
+            width: 100%;
+            max-width: 1000px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(60,64,67,0.3);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: #202124;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Grid for recommended clips saved in persistent storage */
+        .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            min-height: 100px;
+        }
+
+        .video-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .video-info {
+            padding: 12px;
+        }
+
+        .video-title {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .remove-btn {
+            background: #fce8e6;
+            color: #c5221f;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .remove-btn:hover {
+            background: #fad2cf;
+        }
+
+        /* Trigger Button mimicking Google Slides Menubar path: Insert > Video */
+        .insert-trigger-btn {
+            background-color: var(--google-blue);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(60,64,67,0.3);
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        .insert-trigger-btn:hover {
+            background-color: #1557b0;
+            box-shadow: 0 1px 3px rgba(60,64,67,0.3);
+        }
+
+        /* Modal Overlay explicitly designed to match Google Slides UI precisely */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .slides-modal {
+            width: 90%;
+            max-width: 750px;
+            height: 80vh;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 12px 15px rgba(0,0,0,0.24);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 18px 24px;
+            font-size: 16px;
+            font-weight: 400;
+            color: #202124;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Slides Navigation Menu */
+        .modal-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--border-color);
+            padding-left: 24px;
+        }
+
+        .tab {
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #5f6368;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            color: var(--google-blue);
+            border-bottom-color: var(--google-blue);
+        }
+
+        .modal-body {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* Search input wrapper tracking Google styling */
+        .search-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 16px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--google-blue);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .search-btn {
+            background: var(--google-gray);
+            border: 1px solid var(--border-color);
+            padding: 0 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-btn:hover {
+            background: #e8eaed;
+        }
+
+        /* Search Output Panel mimicking Google Picker Grid layout */
+        .results-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            overflow-y: auto;
+            max-height: 45vh;
+            padding: 4px;
+        }
+
+        .result-item {
+            border: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 6px;
+            transition: background 0.15s;
+        }
+
+        .result-item:hover {
+            background: var(--google-gray);
+        }
+
+        .result-item.selected {
+            border-color: var(--google-blue);
+            background: #e8f0fe;
+        }
+
+        .thumb-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .thumb-wrapper img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .result-title {
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.3;
+            max-height: 2.6em;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        /* Modal Footer Action row */
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: white;
+        }
+
+        .btn-secondary {
+            background: white;
+            border: 1px solid var(--border-color);
+            color: #5f6368;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-secondary:hover {
+            background: #f8f9fa;
+        }
+
+        .btn-primary {
+            background: var(--google-blue);
+            border: 1px solid transparent;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary:disabled {
+            background: #f1f3f4;
+            color: #b0b3b8;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #80868b;
+            padding-top: 40px;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
-  <header class="top">
-    <a class="brand" href="#/" aria-label="Tubelight home">Tubelight</a>
-    <form id="searchForm" class="search" role="search">
-      <input id="searchInput" type="search" placeholder="Search videos" autocomplete="off" aria-label="Search videos">
-      <button type="submit">Search</button>
-    </form>
-    <button id="settingsBtn" class="ghost" type="button">Settings</button>
-  </header>
 
-  <main id="app" tabindex="-1"></main>
+    <h1>Interactive Presentation Dashboard</h1>
 
-  <dialog id="settings">
-    <form method="dialog" id="settingsForm">
-      <h2>Settings</h2>
-      <p class="muted">Search works without a key by using public servers. Adding a YouTube Data API v3 key makes it faster and more reliable. Everything is saved only in this browser.</p>
-      <label for="keyInput">API key (optional)</label>
-      <input id="keyInput" type="password" placeholder="AIza..." autocomplete="off">
-      <label for="instInput">Backup servers (optional, space-separated)</label>
-      <input id="instInput" type="text" placeholder="https://your-invidious.example" autocomplete="off">
-      <label for="regionInput">Trending region (2-letter code)</label>
-      <input id="regionInput" type="text" maxlength="2" placeholder="US">
-      <div class="row">
-        <button type="button" id="clearHistory" class="ghost">Clear watch history</button>
-        <span class="spacer"></span>
-        <button type="button" id="closeSettings" class="ghost">Cancel</button>
-        <button type="submit" value="save">Save</button>
-      </div>
-    </form>
-  </dialog>
+    <!-- Persistent Recommendation Shelf mimicking main Google Slide Workspace -->
+    <div class="workspace">
+        <div class="section-title">
+            <span>⭐ Recommended Presentation Videos</span>
+        </div>
+        <div id="recommendationsGrid" class="recommendations-grid">
+            <!-- Items injected dynamically via Storage Engine -->
+        </div>
+    </div>
 
-  <div id="toast" role="status" aria-live="polite"></div>
-  <script src="app.js"></script>
-</body>
-</html>
+    <!-- UI Entry point mirroring: Insert > Video -->
+    <button class="insert-trigger-btn" id="openModalBtn">Insert > Video</button>
+
+    <!-- Google Slides Embedded Media Picker Dialog -->
