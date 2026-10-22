@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tubelight – search and watch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="#/" aria-label="Tubelight home">Tubelight</a>
+    <form id="searchForm" class="search" role="search">
+      <input id="searchInput" type="search" placeholder="Search videos" autocomplete="off" aria-label="Search videos">
+      <button type="submit">Search</button>
+    </form>
+    <button id="settingsBtn" class="ghost" type="button">Settings</button>
+  </header>
+
+  <main id="app" tabindex="-1"></main>
+
+  <dialog id="settings">
+    <form method="dialog" id="settingsForm">
+      <h2>Settings</h2>
+      <p class="muted">Search needs a free YouTube Data API v3 key. It is saved only in this browser.</p>
+      <label for="keyInput">API key</label>
+      <input id="keyInput" type="password" placeholder="AIza..." autocomplete="off">
+      <label for="regionInput">Trending region (2-letter code)</label>
+      <input id="regionInput" type="text" maxlength="2" placeholder="US">
+      <div class="row">
+        <button type="button" id="clearHistory" class="ghost">Clear watch history</button>
+        <span class="spacer"></span>
+        <button type="button" id="closeSettings" class="ghost">Cancel</button>
+        <button type="submit" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
